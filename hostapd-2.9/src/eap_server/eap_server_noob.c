@@ -2383,9 +2383,14 @@ static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t
     eap_noob_decode_obj(data->peer_attr, resp_obj);
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerId = %s, peerStat = %d", data->peer_attr->peerid_rcvd, data->peer_attr->peer_state);
     if (!eap_noob_verify_peerId(data)) {
-        //
+        /*PLACE NEW USER TO DB HERE*/
     }
-    eap_noob_change_state(data, data->peer_attr->peer_state);
+    if (data->peer_attr->peer_state != 1/*GET SERVER STATE FROM DB HERE*/) {
+        eap_noob_set_success(data, FAILURE);
+        eap_noob_set_error(data->peer_attr,E2002);
+        eap_noob_set_done(data, NOT_DONE);
+        return;
+    }
     data->peer_attr->next_req = EAP_NOOB_TYPE_1;
     //eap_noob_change_state(data->peer_attr->peer_state);
 }
