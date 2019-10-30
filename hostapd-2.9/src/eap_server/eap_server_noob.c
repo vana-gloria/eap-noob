@@ -1667,6 +1667,33 @@ EXIT:
     return req;
 }
 
+static struct wpabuf *eap_noob_req_type_nine(struct eap_noob_server_context *data)
+{
+    struct wpabuf * req = NULL;
+    char * req_json = NULL;
+    json_t * req_obj = NULL;
+    int err = 0;
+    err -= (NULL == (req_obj = json_object()));
+    err += json_object_set_new(req_obj, TYPE, json_integer(EAP_NOOB_TYPE_9));
+    err -= (NULL == (req_json = json_dumps(req_obj, JSON_COMPACT|JSON_PRESERVE_ORDER)));
+    if (err < 0) goto EXIT;
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: request %s =  %d",req_json,(int)strlen(req_json));
+    int len = strlen(req_json)+1;
+    if (NULL == (req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOOB, len, EAP_CODE_REQUEST, 0))) {
+        wpa_printf(MSG_ERROR, "EAP-NOOB: Failed to allocate memory for Request/NOOB-9"); goto EXIT;
+    }
+    wpabuf_put_data(req, req_json, len);
+
+EXIT:
+    json_decref(req_obj);
+    EAP_NOOB_FREE(req_json);
+    if (err < 0) {
+        wpabuf_free(req);
+        return NULL;
+    }
+    return req;
+}
+
 /**
  * eap_oob_req_type_one - Build the EAP-Request/Initial Exchange 1.
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
@@ -1864,6 +1891,9 @@ static struct wpabuf * eap_noob_buildReq(struct eap_sm * sm, void * priv, u8 id)
 
         case EAP_NOOB_TYPE_8:
             return eap_noob_req_noobid(data, id);
+
+        case EAP_NOOB_TYPE_9:
+            return eap_noob_req_type_nine(data);
         default:
             wpa_printf(MSG_DEBUG, "EAP-NOOB: Unknown type in buildReq");
             break;
@@ -2349,6 +2379,17 @@ static void eap_noob_rsp_type_two(struct eap_noob_server_context * data, json_t 
     }
 }
 
+static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t * resp_obj) {
+    eap_noob_decode_obj(data->peer_attr, resp_obj);
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerId = %s, peerStat = %d", data->peer_attr->peerid_rcvd, data->peer_attr->peer_state);
+    if (!eap_noob_verify_peerId(data)) {
+        //
+    }
+    eap_noob_change_state(data, data->peer_attr->peer_state);
+    data->peer_attr->next_req = EAP_NOOB_TYPE_1;
+    //eap_noob_change_state(data->peer_attr->peer_state);
+}
+
 /**
  * eap_oob_rsp_type_one - Process EAP-Response/Initial Exchange 1
  * @data: Pointer to private EAP-NOOB data
@@ -2507,6 +2548,10 @@ static void eap_noob_process(struct eap_sm * sm, void * priv, struct wpabuf * re
         case EAP_NOOB_TYPE_8:
             wpa_printf(MSG_DEBUG, "EAP-NOOB: ENTERING NOOB PROCESS TYPE NoobId");
             eap_noob_rsp_noobid(data, resp_obj);
+            break;
+        case EAP_NOOB_TYPE_9:
+            wpa_printf(MSG_DEBUG, "EAP-NOOB: ENTERING NOOB PROCESS TYPE 9");
+            eap_noob_rsp_type_nine(data, resp_obj);
             break;
 
         case NONE:
