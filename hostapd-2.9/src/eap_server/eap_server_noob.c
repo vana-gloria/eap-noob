@@ -372,7 +372,15 @@ static int eap_noob_db_functions(struct eap_noob_server_context * data, u8 type)
         case GET_NOOBID:
             os_snprintf(query, MAX_LINE_SIZE, "SELECT * FROM EphemeralNoob WHERE PeerId=? AND NoobId=?;");
             ret = eap_noob_exec_query(data, query, columns_ephemeralnoob, 4, TEXT, data->peer_attr->PeerId, TEXT,
-                  data->peer_attr->oob_data->NoobId_b64);
+                                      data->peer_attr->oob_data->NoobId_b64);
+            break;
+        case GET_PERSISTENT_STATE:
+            os_snprintf(query, MAX_LINE_SIZE, "SELECT ServerState FROM PersistentState WHERE PeerId=?;");
+            ret = eap_noob_exec_query(data, query, columns_persistentstate, 1, INT, data->peer_attr->PeerId);
+            break;
+        case IF_PEER_EXISTS:
+            os_snprintf(query, MAX_LINE_SIZE, "SELECT EXISTS(SELECT PeerId FROM PersistentState WHERE PeerId=? LIMIT 1);");
+            ret = eap_noob_exec_query(data, query, columns_persistentstate, 1, INT, data->peer_attr->PeerId);
             break;
         default:
             wpa_printf(MSG_ERROR, "EAP-NOOB: Wrong DB update type");
@@ -2381,11 +2389,16 @@ static void eap_noob_rsp_type_two(struct eap_noob_server_context * data, json_t 
 
 static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t * resp_obj) {
     eap_noob_decode_obj(data->peer_attr, resp_obj);
-    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerId = %s, peerStat = %d", data->peer_attr->peerid_rcvd, data->peer_attr->peer_state);
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerId = %s, peerState = %d", data->peer_attr->peerid_rcvd, data->peer_attr->peer_state);
     if (!eap_noob_verify_peerId(data)) {
-        /*PLACE NEW USER TO DB HERE*/
+        int exists = eap_noob_db_functions(data, IF_PEER_EXISTS);
+        if (!exists) {
+            eap_noob_db_functions(data, UPDATE_INITIALEXCHANGE_INFO);
+        }
     }
-    if (data->peer_attr->peer_state != 1/*GET SERVER STATE FROM DB HERE*/) {
+    // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
+    int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
+    if (!(storedState && data->peer_attr->peer_state == storedState)) {
         eap_noob_set_success(data, FAILURE);
         eap_noob_set_error(data->peer_attr,E2002);
         eap_noob_set_done(data, NOT_DONE);
