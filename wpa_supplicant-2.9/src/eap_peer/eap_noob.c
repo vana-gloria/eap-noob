@@ -1208,6 +1208,58 @@ static struct wpabuf * eap_noob_verify_PeerId(struct eap_noob_peer_context * dat
     return NULL;
 }
 
+static struct wpabuf * eap_noob_rsp_type_nine(const struct eap_noob_peer_context * data)
+{
+    json_t * rsp_obj = NULL;
+    struct wpabuf * resp = NULL;
+    char * resp_json = NULL;
+    size_t len = 0; int err = 0;
+    if (NULL == data) {
+        wpa_printf(MSG_DEBUG, "EAP-NOOB: Input arguments NULL for function %s",__func__);
+        return NULL;
+    }
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Entering %s", __func__);
+    err -= (NULL == (rsp_obj = json_object()));
+    err += json_object_set_new(rsp_obj, TYPE, json_integer(EAP_NOOB_TYPE_9));
+    err += json_object_set_new(rsp_obj, PEERID, json_string(data->server_attr->PeerId));
+    err += json_object_set_new(rsp_obj, PEER_STATE, json_string((const char *) data->peer_attr->state));
+    err -= (NULL == (resp_json = json_dumps(rsp_obj,JSON_COMPACT|JSON_PRESERVE_ORDER)));
+    if (err < 0) goto EXIT;
+
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Response %s = %d", resp_json, (int)strlen(resp_json));
+    len = strlen(resp_json)+1;
+    if (NULL == (resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOOB, len, EAP_CODE_RESPONSE, 0))) {
+        wpa_printf(MSG_ERROR, "EAP-NOOB: Failed to allocate memory for Response/NOOB-9"); goto EXIT;
+    }
+    wpabuf_put_data(resp,resp_json,len);
+EXIT:
+    EAP_NOOB_FREE(resp_json);
+    json_decref(rsp_obj);
+    return resp;
+}
+
+static struct wpabuf * eap_noob_req_type_nine(struct eap_sm *sm, json_t * req_obj , struct eap_noob_peer_context *data)
+{
+    struct wpabuf * resp = NULL;
+
+    if (NULL == req_obj || NULL == data) {
+        wpa_printf(MSG_DEBUG, "EAP-NOOB: Input arguments NULL for function %s",__func__);
+        return NULL;
+    }
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: OOB PROCESS REQ TYPE 9");
+
+    eap_noob_decode_obj(data->server_attr,req_obj);
+    if (data->server_attr->err_code != NO_ERROR) {
+        resp = eap_noob_err_msg(data, 0);
+        return resp;
+    }
+
+    resp = eap_noob_rsp_type_nine(data);
+
+    data->server_attr->rcvd_params = 0;
+    return resp;
+}
+
 /**
  * eap_noob_rsp_type_four : prepares message type four
  * @data : peer context
@@ -2144,6 +2196,9 @@ static struct wpabuf * eap_noob_process(struct eap_sm * sm, void * priv, struct 
                 ret->methodState = METHOD_MAY_CONT;
                 ret->decision = DECISION_COND_SUCC;
             }
+            break;
+        case EAP_NOOB_TYPE_9:
+            resp = eap_noob_req_type_nine(sm, req_obj, data);
             break;
         case EAP_NOOB_HINT:
             resp = eap_noob_req_type_eight(sm, req_obj, data, id);

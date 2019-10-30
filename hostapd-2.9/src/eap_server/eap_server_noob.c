@@ -2398,10 +2398,10 @@ static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t
     }
     // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
     int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
-    if (!(storedState && data->peer_attr->peer_state == storedState)) {
-        eap_noob_set_success(data, FAILURE);
+    if (storedState && data->peer_attr->peer_state != storedState) {
         eap_noob_set_error(data->peer_attr,E2002);
         eap_noob_set_done(data, NOT_DONE);
+        eap_noob_set_success(data, FAILURE);
         return;
     }
     data->peer_attr->next_req = EAP_NOOB_TYPE_1;
