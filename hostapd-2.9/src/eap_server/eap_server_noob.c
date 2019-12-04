@@ -1684,7 +1684,7 @@ EXIT:
     return req;
 }
 
-static struct wpabuf *eap_noob_req_type_nine(struct eap_noob_server_context *data)
+static struct wpabuf *eap_noob_req_type_nine(struct eap_noob_server_context *data, u8 id)
 {
     struct wpabuf * req = NULL;
     char * req_json = NULL;
@@ -1696,7 +1696,7 @@ static struct wpabuf *eap_noob_req_type_nine(struct eap_noob_server_context *dat
     if (err < 0) goto EXIT;
     wpa_printf(MSG_DEBUG, "EAP-NOOB: request %s =  %d",req_json,(int)strlen(req_json));
     int len = strlen(req_json)+1;
-    if (NULL == (req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOOB, len, EAP_CODE_REQUEST, 0))) {
+    if (NULL == (req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOOB, len, EAP_CODE_REQUEST, id))) {
         wpa_printf(MSG_ERROR, "EAP-NOOB: Failed to allocate memory for Request/NOOB-9"); goto EXIT;
     }
     wpabuf_put_data(req, req_json, len);
@@ -1910,7 +1910,7 @@ static struct wpabuf * eap_noob_buildReq(struct eap_sm * sm, void * priv, u8 id)
             return eap_noob_req_noobid(data, id);
 
         case EAP_NOOB_TYPE_9:
-            return eap_noob_req_type_nine(data);
+            return eap_noob_req_type_nine(data, id);
         default:
             wpa_printf(MSG_DEBUG, "EAP-NOOB: Unknown type in buildReq");
             break;
@@ -2397,8 +2397,23 @@ static void eap_noob_rsp_type_two(struct eap_noob_server_context * data, json_t 
     }
 }
 
-static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t * resp_obj) {
+static void eap_noob_rsp_type_nine(struct eap_sm * sm,struct eap_noob_server_context * data, json_t * resp_obj) {
+    json_error_t error;
+    json_t * PeerInfo; int err = 0;
+
+    /* Check for the supporting cryptosuites, PeerId, version, direction*/
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Response Processed/NOOB-IE-9");
+
+    if (NULL == resp_obj || NULL == data || NULL == sm) {
+        wpa_printf(MSG_DEBUG, "EAP-NOOB: Input arguments NULL for function %s",__func__);
+        return ;
+    }
     eap_noob_decode_obj(data->peer_attr, resp_obj);
+
+    if ((data->peer_attr->err_code != NO_ERROR)) {
+        eap_noob_set_done(data, NOT_DONE); return;
+    }
+
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerState = %d", data->peer_attr->peer_state);
     /*
     if (!eap_noob_verify_peerId(data)) {
@@ -2585,7 +2600,7 @@ static void eap_noob_process(struct eap_sm * sm, void * priv, struct wpabuf * re
             break;
         case EAP_NOOB_TYPE_9:
             wpa_printf(MSG_DEBUG, "EAP-NOOB: ENTERING NOOB PROCESS TYPE 9");
-            eap_noob_rsp_type_nine(data, resp_obj);
+            eap_noob_rsp_type_nine(sm, data, resp_obj);
             break;
 
         case NONE:
