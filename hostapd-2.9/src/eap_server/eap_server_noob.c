@@ -413,6 +413,9 @@ static int eap_noob_get_next_req(struct eap_noob_server_context * data)
     }
     wpa_printf (MSG_DEBUG,"EAP-NOOB:Serv state = %d, Peer state = %d, Next req =%d",
                 data->peer_attr->server_state, data->peer_attr->peer_state, retval);
+    if (data->peer_attr->peer_state < 4) {
+        retval = EAP_NOOB_TYPE_9;
+    }
     if (retval == EAP_NOOB_TYPE_5) {
         data->peer_attr->server_state = RECONNECTING_STATE;
         if (FAILURE == eap_noob_db_functions(data, UPDATE_PERSISTENT_STATE))
@@ -1933,7 +1936,8 @@ static Boolean eap_noob_check(struct eap_sm * sm, void * priv,
         return TRUE;
     }
     wpa_printf(MSG_INFO, "EAP-NOOB: Checking EAP-Response packet.");
-    data = priv; state = data->peer_attr->server_state;
+    data = priv;
+    state = data->peer_attr->server_state;
     pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_NOOB, respData, &len);
     resp_obj = json_loads((char *)pos, JSON_COMPACT|JSON_PRESERVE_ORDER, &error);
 
@@ -2397,15 +2401,22 @@ static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t
         }
     }
     // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
-    int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
+    /*int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
     if (storedState && data->peer_attr->peer_state != storedState) {
         eap_noob_set_error(data->peer_attr,E2002);
         eap_noob_set_done(data, NOT_DONE);
         eap_noob_set_success(data, FAILURE);
         return;
-    }
+    }*/
+
+    // Do I really need to set these vvv ?
+    eap_noob_set_done(data, DONE);
+    eap_noob_set_success(data, SUCCESS);
+
+    // Is it a correct wat to set status? vvvvvvvvv
+    eap_noob_change_state(data->peer_attr->peer_state);
+
     data->peer_attr->next_req = EAP_NOOB_TYPE_1;
-    //eap_noob_change_state(data->peer_attr->peer_state);
 }
 
 /**
@@ -2800,7 +2811,8 @@ static int eap_noob_server_ctxt_init(struct eap_noob_server_context * data, stru
             goto EXIT;
 
         if (data->peer_attr->err_code == NO_ERROR) {
-            data->peer_attr->next_req = eap_noob_get_next_req(data);
+            //HERE?
+            data->peer_attr->next_req = eap_noob_get_next_req(EAP_NOOB_TYPE_9);
         }
 
         if (data->peer_attr->server_state == UNREGISTERED_STATE ||

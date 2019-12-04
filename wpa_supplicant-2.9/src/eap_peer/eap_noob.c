@@ -47,6 +47,7 @@
 #include <string.h>
 #include <sqlite3.h>
 #include <jansson.h>
+#include <eap_common.h>
 #include "common.h"
 #include "eap_i.h"
 #include "eap_noob.h"
@@ -1208,7 +1209,7 @@ static struct wpabuf * eap_noob_verify_PeerId(struct eap_noob_peer_context * dat
     return NULL;
 }
 
-static struct wpabuf * eap_noob_rsp_type_nine(const struct eap_noob_peer_context * data)
+static struct wpabuf * eap_noob_rsp_type_nine(const struct eap_noob_peer_context * data, u8 id)
 {
     json_t * rsp_obj = NULL;
     struct wpabuf * resp = NULL;
@@ -1238,7 +1239,7 @@ EXIT:
     return resp;
 }
 
-static struct wpabuf * eap_noob_req_type_nine(struct eap_sm *sm, json_t * req_obj , struct eap_noob_peer_context *data)
+static struct wpabuf * eap_noob_req_type_nine(struct eap_sm *sm, json_t * req_obj , struct eap_noob_peer_context *data, u8 id)
 {
     struct wpabuf * resp = NULL;
 
@@ -1254,7 +1255,7 @@ static struct wpabuf * eap_noob_req_type_nine(struct eap_sm *sm, json_t * req_ob
         return resp;
     }
 
-    resp = eap_noob_rsp_type_nine(data);
+    resp = eap_noob_rsp_type_nine(data, id);
 
     data->server_attr->rcvd_params = 0;
     return resp;
@@ -2198,7 +2199,7 @@ static struct wpabuf * eap_noob_process(struct eap_sm * sm, void * priv, struct 
             }
             break;
         case EAP_NOOB_TYPE_9:
-            resp = eap_noob_req_type_nine(sm, req_obj, data);
+            resp = eap_noob_req_type_nine(sm, req_obj, data, id);
             break;
         case EAP_NOOB_HINT:
             resp = eap_noob_req_type_eight(sm, req_obj, data, id);
