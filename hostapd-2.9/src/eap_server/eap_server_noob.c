@@ -2818,7 +2818,7 @@ static int eap_noob_server_ctxt_init(struct eap_noob_server_context * data, stru
 
         if (data->peer_attr->err_code == NO_ERROR) {
             //HERE?
-            data->peer_attr->next_req = eap_noob_get_next_req(EAP_NOOB_TYPE_9);
+            data->peer_attr->next_req = EAP_NOOB_TYPE_9;
         }
 
         if (data->peer_attr->server_state == UNREGISTERED_STATE ||
