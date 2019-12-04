@@ -47,7 +47,7 @@
 #include <string.h>
 #include <sqlite3.h>
 #include <jansson.h>
-#include <eap_common.h>
+
 #include "common.h"
 #include "eap_i.h"
 #include "eap_noob.h"
@@ -1220,12 +1220,27 @@ static struct wpabuf * eap_noob_rsp_type_nine(const struct eap_noob_peer_context
         return NULL;
     }
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Entering %s", __func__);
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: PeerState %d", data->peer_attr->state);
+
+    data->peer_attr->state = WAITING_FOR_OOB_STATE;
+
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: PeerState %d %s", data->peer_attr->state, data->peer_attr->PeerId);
+
+
     err -= (NULL == (rsp_obj = json_object()));
     err += json_object_set_new(rsp_obj, TYPE, json_integer(EAP_NOOB_TYPE_9));
-    err += json_object_set_new(rsp_obj, PEERID, json_string(data->server_attr->PeerId));
-    err += json_object_set_new(rsp_obj, PEER_STATE, json_string((const char *) data->peer_attr->state));
+    if (data->peer_attr->PeerId) {
+        err += json_object_set_new(rsp_obj, PEERID, json_string(data->server_attr->PeerId));
+    }
+    char peerState_str[12];
+    sprintf(peerState_str, "%d", data->peer_attr->state);
+    err += json_object_set_new(rsp_obj, PEER_STATE, json_string(peerState_str));
     err -= (NULL == (resp_json = json_dumps(rsp_obj,JSON_COMPACT|JSON_PRESERVE_ORDER)));
-    if (err < 0) goto EXIT;
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: ERROR %d %s", err, resp_json);
+    if (err < 0) {
+        wpa_printf(MSG_DEBUG, "EAP-NOOB: ERROR %d %s", err, resp_json);
+        goto EXIT;
+    }
 
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Response %s = %d", resp_json, (int)strlen(resp_json));
     len = strlen(resp_json)+1;
