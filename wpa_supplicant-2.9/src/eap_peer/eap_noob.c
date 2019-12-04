@@ -1209,7 +1209,7 @@ static struct wpabuf * eap_noob_verify_PeerId(struct eap_noob_peer_context * dat
     return NULL;
 }
 
-static struct wpabuf * eap_noob_rsp_type_nine(const struct eap_noob_peer_context * data, u8 id)
+static struct wpabuf * eap_noob_rsp_type_nine(struct eap_sm *sm, const struct eap_noob_peer_context * data, u8 id)
 {
     json_t * rsp_obj = NULL;
     struct wpabuf * resp = NULL;
@@ -1244,7 +1244,7 @@ static struct wpabuf * eap_noob_rsp_type_nine(const struct eap_noob_peer_context
 
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Response %s = %d", resp_json, (int)strlen(resp_json));
     len = strlen(resp_json)+1;
-    if (NULL == (resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOOB, len, EAP_CODE_RESPONSE, 0))) {
+    if (NULL == (resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOOB, len, EAP_CODE_RESPONSE, id))) {
         wpa_printf(MSG_ERROR, "EAP-NOOB: Failed to allocate memory for Response/NOOB-9"); goto EXIT;
     }
     wpabuf_put_data(resp,resp_json,len);
@@ -1270,7 +1270,7 @@ static struct wpabuf * eap_noob_req_type_nine(struct eap_sm *sm, json_t * req_ob
         return resp;
     }
 
-    resp = eap_noob_rsp_type_nine(data, id);
+    resp = eap_noob_rsp_type_nine(sm, data, id);
 
     data->server_attr->rcvd_params = 0;
     return resp;
