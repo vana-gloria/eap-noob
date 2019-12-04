@@ -2420,7 +2420,7 @@ static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t
     eap_noob_set_success(data, SUCCESS);
 
     // Is it a correct wat to set status? vvvvvvvvv
-    eap_noob_change_state(data->peer_attr->peer_state);
+    data->peer_attr->peer_state = UNREGISTERED_STATE;
 
     data->peer_attr->next_req = EAP_NOOB_TYPE_1;
 }
