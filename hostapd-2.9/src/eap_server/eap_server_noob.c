@@ -457,15 +457,18 @@ static int eap_noob_parse_NAI(struct eap_noob_server_context * data, const char 
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Entering %s, parsing NAI (%s)",__func__, NAI);
     _NAI = (char *)NAI;
 
+    //(noob|PeerId+sX@eap-noob.net)
+    //RESERVED_DOMAIN = eap-noob.net
     if (os_strstr(_NAI, RESERVED_DOMAIN) || os_strstr(_NAI, server_conf.realm)) {
-        user_name_peer = strsep(&_NAI, "@"); realm = strsep(&_NAI, "@");
+        user_name_peer = strsep(&_NAI, "@"); //noob|PeerId+sX
+        realm = strsep(&_NAI, "@"); //eap-noob.net
         if (strlen(user_name_peer) > (MAX_PEERID_LEN + 3)) {
             /* plus 3 for '+','s' and state number */
             eap_noob_set_error(data->peer_attr,E1001); return FAILURE;
         }
 
         /* Peer State */
-        if (os_strstr(user_name_peer, "+") && (0 == strcmp(realm, server_conf.realm))) {
+        /*if (os_strstr(user_name_peer, "+") && (0 == strcmp(realm, server_conf.realm))) {
             data->peer_attr->peerid_rcvd = os_strdup(strsep(&user_name_peer, "+"));
             if (*user_name_peer != 's') {
                 eap_noob_set_error(data->peer_attr, E1001); return FAILURE;
@@ -476,6 +479,9 @@ static int eap_noob_parse_NAI(struct eap_noob_server_context * data, const char 
         else if (0 == strcmp("noob", user_name_peer) && 0 == strcmp(realm, RESERVED_DOMAIN)) {
             data->peer_attr->peer_state = UNREGISTERED_STATE; return SUCCESS;
         }
+         */
+        data->peer_attr->peer_state = UNREGISTERED_STATE;
+        return SUCCESS;
     }
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Exiting %s, setting error E1001",__func__);
     eap_noob_set_error(data->peer_attr, E1001);
