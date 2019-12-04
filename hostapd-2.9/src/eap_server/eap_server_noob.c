@@ -2399,13 +2399,15 @@ static void eap_noob_rsp_type_two(struct eap_noob_server_context * data, json_t 
 
 static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t * resp_obj) {
     eap_noob_decode_obj(data->peer_attr, resp_obj);
-    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerId = %s, peerState = %d", data->peer_attr->peerid_rcvd, data->peer_attr->peer_state);
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerState = %d", data->peer_attr->peer_state);
+    /*
     if (!eap_noob_verify_peerId(data)) {
         int exists = eap_noob_db_functions(data, IF_PEER_EXISTS);
         if (!exists) {
             eap_noob_db_functions(data, UPDATE_INITIALEXCHANGE_INFO);
         }
     }
+    */
     // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
     /*int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
     if (storedState && data->peer_attr->peer_state != storedState) {
@@ -2416,7 +2418,8 @@ static void eap_noob_rsp_type_nine(struct eap_noob_server_context * data, json_t
     }*/
 
     // Do I really need to set these vvv ?
-    eap_noob_set_done(data, DONE);
+    eap_noob_set_done(data, NOT_DONE);
+
     eap_noob_set_success(data, SUCCESS);
 
     // Is it a correct wat to set status? vvvvvvvvv

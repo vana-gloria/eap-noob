@@ -2215,6 +2215,9 @@ static struct wpabuf * eap_noob_process(struct eap_sm * sm, void * priv, struct 
             break;
         case EAP_NOOB_TYPE_9:
             resp = eap_noob_req_type_nine(sm, req_obj, data, id);
+            if(data->server_attr->err_code == NO_ERROR) {
+                ret->methodState = METHOD_MAY_CONT;
+            }
             break;
         case EAP_NOOB_HINT:
             resp = eap_noob_req_type_eight(sm, req_obj, data, id);
