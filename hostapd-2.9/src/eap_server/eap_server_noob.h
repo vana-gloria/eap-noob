@@ -48,7 +48,7 @@
 #define INVALID                 0
 #define VALID                   1
 #define NUM_OF_STATES           5
-#define MAX_MSG_TYPES           8
+#define MAX_MSG_TYPES           9
 
 /* OOB DIRECTIONS */
 #define PEER_TO_SERVER          1

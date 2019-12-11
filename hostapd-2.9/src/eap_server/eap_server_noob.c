@@ -2415,14 +2415,24 @@ static void eap_noob_rsp_type_nine(struct eap_sm * sm,struct eap_noob_server_con
     }
 
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerState = %d", data->peer_attr->peer_state);
-    /*
-    if (!eap_noob_verify_peerId(data)) {
-        int exists = eap_noob_db_functions(data, IF_PEER_EXISTS);
-        if (!exists) {
-            eap_noob_db_functions(data, UPDATE_INITIALEXCHANGE_INFO);
-        }
+
+    switch (data->peer_attr->peer_state) {
+        case UNREGISTERED_STATE:
+            data->peer_attr->next_req = EAP_NOOB_TYPE_1;
+            break;
+        case WAITING_FOR_OOB_STATE:
+            if (data->peer_attr->server_state == WAITING_FOR_OOB_STATE) {
+                data->peer_attr->next_req = EAP_NOOB_TYPE_4;
+            }
+            data->peer_attr->next_req = EAP_NOOB_TYPE_8;
+            break;
+        case RECONNECTING_STATE:
+            if (data->peer_attr->server_state == RECONNECTING_STATE || data->peer_attr->server_state == REGISTERED_STATE) {
+                data->peer_attr->next_req = EAP_NOOB_TYPE_1;
+            }
+        default: data->peer_attr->err_code = 2002;
+
     }
-    */
     // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
     /*int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
     if (storedState && data->peer_attr->peer_state != storedState) {
@@ -2432,10 +2442,7 @@ static void eap_noob_rsp_type_nine(struct eap_sm * sm,struct eap_noob_server_con
         return;
     }*/
 
-    // Do I really need to set these vvv ?
     eap_noob_set_done(data, NOT_DONE);
-    // Is it a correct wat to set status? vvvvvvvvv
-    data->peer_attr->peer_state = UNREGISTERED_STATE;
     data->peer_attr->next_req = EAP_NOOB_TYPE_1;
 }
 
