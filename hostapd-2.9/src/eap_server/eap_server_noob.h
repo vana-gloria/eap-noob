@@ -86,11 +86,11 @@
 #define VERP                    "Verp"
 #define CRYPTOSUITEP            "Cryptosuitep"
 #define DIRP                    "Dirp"
+#define PEERSTATE               "PeerState"
 #define NP                      "Np"
 #define NP2                     "Np2"
 #define PKP                     "PKp"
 #define PEERINFO                "PeerInfo"
-//#define PEERSTATE               "state"
 #define NOOBID                  "NoobId"
 #define MACP                    "MACp"
 #define MACP2                   "MACp2"
@@ -120,6 +120,7 @@
 #define WE_COUNT_RCVD           0x2000
 #define REALM_RCVD              0x4000
 #define ENCODE_RCVD             0x8000
+#define PEERSTATE_RCVD             0x8001
 
 #define TYPE_ONE_PARAMS         (PEERID_RCVD|VERSION_RCVD|CRYPTOSUITEP_RCVD|DIRP_RCVD|INFO_RCVD)
 #define TYPE_TWO_PARAMS         (PEERID_RCVD|NONCE_RCVD|PKEY_RCVD)

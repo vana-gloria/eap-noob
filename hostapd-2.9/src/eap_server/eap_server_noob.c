@@ -2115,6 +2115,9 @@ static void  eap_noob_decode_obj(struct eap_noob_peer_data * data, json_t * resp
                 }
                 else if (0 == strcmp(key, ERRORCODE)) {
                     eap_noob_set_error(data, eap_noob_FindIndex(retval_int));
+                } else if (0 == strcmp(key, PEERSTATE)) {
+                    data->peer_state = retval_int;
+                    data->rcvd_params |= PEERSTATE_RCVD;
                 }
                 break;
             case JSON_STRING:

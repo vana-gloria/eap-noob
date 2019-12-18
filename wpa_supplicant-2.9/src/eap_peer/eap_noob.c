@@ -1220,16 +1220,15 @@ static struct wpabuf * eap_noob_rsp_type_nine(struct eap_sm *sm, const struct ea
         return NULL;
     }
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Entering %s", __func__);
-    wpa_printf(MSG_DEBUG, "EAP-NOOB: PeerState %d | PeerId %s", data->peer_attr->state, data->peer_attr->PeerId);
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: PeerState %d | PeerId %s", data->server_attr->state, data->server_attr->PeerId);
 
     err -= (NULL == (rsp_obj = json_object()));
     err += json_object_set_new(rsp_obj, TYPE, json_integer(EAP_NOOB_TYPE_9));
     if (data->peer_attr->PeerId) {
         err += json_object_set_new(rsp_obj, PEERID, json_string(data->server_attr->PeerId));
     }
-    char peerState_str[12];
-    sprintf(peerState_str, "%d", data->peer_attr->state);
-    err += json_object_set_new(rsp_obj, PEER_STATE, json_string(peerState_str));
+
+    err += json_object_set_new(rsp_obj, PEER_STATE, json_integer(data->server_attr->state));
     err -= (NULL == (resp_json = json_dumps(rsp_obj,JSON_COMPACT|JSON_PRESERVE_ORDER)));
     wpa_printf(MSG_DEBUG, "EAP-NOOB: ERROR %d %s", err, resp_json);
     if (err < 0) {
