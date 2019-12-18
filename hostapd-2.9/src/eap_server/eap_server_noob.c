@@ -2196,7 +2196,7 @@ static void eap_noob_rsp_type_seven(struct eap_noob_server_context * data,
             wpa_printf(MSG_DEBUG, "EAP-NOOB: Updating server state failed ");
             goto EXIT;
         }
-        data->peer_attr->next_req = NONE;
+        data->peer_attr->next_req = EAP_NOOB_TYPE_9;
         eap_noob_set_done(data, DONE); eap_noob_set_success(data, SUCCESS);
     }
 EXIT:
@@ -2311,7 +2311,7 @@ static void eap_noob_rsp_type_four(struct eap_noob_server_context * data,
         }
         if (dir == SERVER_TO_PEER) eap_noob_del_temp_tuples(data);
 
-        data->peer_attr->next_req = NONE;
+        data->peer_attr->next_req = EAP_NOOB_TYPE_9;
         eap_noob_set_done(data, DONE); eap_noob_set_success(data, SUCCESS);
     }
 EXIT:
@@ -2345,7 +2345,7 @@ static void eap_noob_rsp_type_three(struct eap_noob_server_context * data,
 
     if (eap_noob_verify_peerId(data)) {
         eap_noob_change_state(data, WAITING_FOR_OOB_STATE);
-        data->peer_attr->next_req = NONE;
+        data->peer_attr->next_req = EAP_NOOB_TYPE_9;
         eap_noob_set_done(data, DONE);
         eap_noob_set_success(data, FAILURE);
     }
@@ -2392,8 +2392,9 @@ static void eap_noob_rsp_type_two(struct eap_noob_server_context * data, json_t 
         if (FAILURE == eap_noob_db_functions(data, UPDATE_INITIALEXCHANGE_INFO)) {
             eap_noob_set_done(data, DONE); eap_noob_set_success(data,FAILURE); return;
         }
-        data->peer_attr->next_req = NONE;
-        eap_noob_set_done(data, DONE); eap_noob_set_success(data, FAILURE);
+        data->peer_attr->next_req = EAP_NOOB_TYPE_9;
+        eap_noob_set_done(data, DONE);
+        eap_noob_set_success(data, FAILURE);
     }
 }
 
