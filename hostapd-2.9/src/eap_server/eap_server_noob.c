@@ -2051,6 +2051,11 @@ static void eap_noob_verify_param_len(struct eap_noob_peer_data * data)
                         eap_noob_set_error(data, E1003);
                     }
                     break;
+                case PEERSTATE_RCVD:
+                    if (strlen(data->peer_state) > MAX_MSG_TYPES) {
+                        eap_noob_set_error(data, E1003);
+                    }
+                    break;
             }
         }
         pos = pos<<1;
@@ -2159,7 +2164,9 @@ static void  eap_noob_decode_obj(struct eap_noob_peer_data * data, json_t * resp
                 break;
         }
     }
+    wpa_printf(MSG_DEBUG, "DECODED; peerstate %d", data->peer_state);
     eap_noob_verify_param_len(data);
+    wpa_printf(MSG_DEBUG, "VERIFIED; peerstate %d", data->peer_state);
 }
 
 /**
