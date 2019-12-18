@@ -2051,11 +2051,11 @@ static void eap_noob_verify_param_len(struct eap_noob_peer_data * data)
                         eap_noob_set_error(data, E1003);
                     }
                     break;
-                case PEERSTATE_RCVD:
+                /*case PEERSTATE_RCVD:
                     if (strlen(data->peer_state) > MAX_MSG_TYPES) {
                         eap_noob_set_error(data, E1003);
                     }
-                    break;
+                    break;*/
             }
         }
         pos = pos<<1;
@@ -2107,10 +2107,8 @@ static void  eap_noob_decode_obj(struct eap_noob_peer_data * data, json_t * resp
                 eap_noob_decode_obj(data, value);
                 break;
             case JSON_INTEGER:
-                if (0 == (retval_int = json_integer_value(value)) &&
-                        (0 != strcmp(key,TYPE))) {
-                    eap_noob_set_error(data, E1003); return;
-                }
+                retval_int = json_integer_value(value)
+                wpa_printf(MSG_DEBUG, "RECEIVED KEY %s %d", key, retval_int);
                 if (0 == strcmp(key, VERP)) {
                     data->version = retval_int; data->rcvd_params |= VERSION_RCVD;
                 } else if (0 == strcmp(key, CRYPTOSUITEP)) {
@@ -2122,7 +2120,7 @@ static void  eap_noob_decode_obj(struct eap_noob_peer_data * data, json_t * resp
                     eap_noob_set_error(data, eap_noob_FindIndex(retval_int));
                 } else if (0 == strcmp(key, PEERSTATE)) {
                     data->peer_state = retval_int;
-                    data->rcvd_params |= PEERSTATE_RCVD;
+                    //data->rcvd_params |= PEERSTATE_RCVD;
                 }
                 break;
             case JSON_STRING:
@@ -2419,33 +2417,46 @@ static void eap_noob_rsp_type_nine(struct eap_sm * sm,struct eap_noob_server_con
         wpa_printf(MSG_DEBUG, "EAP-NOOB: Input arguments NULL for function %s",__func__);
         return ;
     }
+
     eap_noob_decode_obj(data->peer_attr, resp_obj);
 
     if ((data->peer_attr->err_code != NO_ERROR)) {
         eap_noob_set_done(data, NOT_DONE); return;
     }
 
-    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerState = %d", data->peer_attr->peer_state);
+    if (data->peer_attr->peerid_rcvd) {
+        EAP_NOOB_FREE(data->peer_attr->PeerId);
+        data->peer_attr->PeerId = os_malloc(MAX_PEERID_LEN);
+        strcpy(data->peer_attr->PeerId, data->peer_attr->peerid_rcvd);
+    }
+
+    wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerState = %d, peerId = %s", data->peer_attr->peer_state, data->peer_attr->PeerId);
 
     switch (data->peer_attr->peer_state) {
         case UNREGISTERED_STATE: //INITIAL EXCHANGE
+            wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data INITIAL_EXCHANGE");
             data->peer_attr->next_req = EAP_NOOB_TYPE_1;
             break;
         case WAITING_FOR_OOB_STATE:
             if (data->peer_attr->server_state == WAITING_FOR_OOB_STATE) {
                 //WAITING EXCHANGE
+                wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data WAITING_EXCHANGE");
                 data->peer_attr->next_req = EAP_NOOB_TYPE_3;
                 break;
             }
             //COMPLETION EXCHANGE
+            wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data COMPLETION_EXCHANGE");
             data->peer_attr->next_req = EAP_NOOB_TYPE_8;
             break;
         case RECONNECTING_STATE: //RECONNECT EXCHANGE
-            if (data->peer_attr->server_state == RECONNECTING_STATE || data->peer_attr->server_state == REGISTERED_STATE) {
+            wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data RECONNECTING_EXCHANGE");
+            if (data->peer_attr->server_state == RECONNECTING_STATE ||
+                data->peer_attr->server_state == REGISTERED_STATE) {
                 data->peer_attr->next_req = EAP_NOOB_TYPE_5;
             }
-        default: data->peer_attr->err_code = 2002;
-
+        default:
+            data->peer_attr->err_code = 2002;
+    }
         //INITIAL EXCHANGE
         //1->2
 
@@ -2460,7 +2471,7 @@ static void eap_noob_rsp_type_nine(struct eap_sm * sm,struct eap_noob_server_con
 
 
 
-    }
+
     // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
     /*int storedState = eap_noob_db_functions(data, GET_PERSISTENT_STATE);
     if (storedState && data->peer_attr->peer_state != storedState) {
