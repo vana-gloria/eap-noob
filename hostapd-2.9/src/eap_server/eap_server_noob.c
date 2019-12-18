@@ -2417,20 +2417,37 @@ static void eap_noob_rsp_type_nine(struct eap_sm * sm,struct eap_noob_server_con
     wpa_printf(MSG_DEBUG, "EAP-NOOB: Type 9 data: peerState = %d", data->peer_attr->peer_state);
 
     switch (data->peer_attr->peer_state) {
-        case UNREGISTERED_STATE:
+        case UNREGISTERED_STATE: //INITIAL EXCHANGE
             data->peer_attr->next_req = EAP_NOOB_TYPE_1;
             break;
         case WAITING_FOR_OOB_STATE:
             if (data->peer_attr->server_state == WAITING_FOR_OOB_STATE) {
-                data->peer_attr->next_req = EAP_NOOB_TYPE_4;
+                //WAITING EXCHANGE
+                data->peer_attr->next_req = EAP_NOOB_TYPE_3;
+                break;
             }
+            //COMPLETION EXCHANGE
             data->peer_attr->next_req = EAP_NOOB_TYPE_8;
             break;
-        case RECONNECTING_STATE:
+        case RECONNECTING_STATE: //RECONNECT EXCHANGE
             if (data->peer_attr->server_state == RECONNECTING_STATE || data->peer_attr->server_state == REGISTERED_STATE) {
-                data->peer_attr->next_req = EAP_NOOB_TYPE_1;
+                data->peer_attr->next_req = EAP_NOOB_TYPE_5;
             }
         default: data->peer_attr->err_code = 2002;
+
+        //INITIAL EXCHANGE
+        //1->2
+
+        //COMPLETION EXCHANGE
+        //8->4
+
+        //WAITING EXCHANGE
+        //3->3
+
+        //RECONNECT EXCHANGE
+        //5->6->7
+
+
 
     }
     // PERSISTENT or EPHEMERAL ?                      vvvvvvvvvv
